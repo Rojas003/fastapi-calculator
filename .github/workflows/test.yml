@@ -31,9 +31,9 @@ jobs:
          pip install -r requirements.txt
          
      - name: Install Playwright browsers
-   run: |
-    source venv/bin/activate
-    playwright install --with-deps
+       run: |
+        source venv/bin/activate
+         playwright install --with-deps
 
      - name: Run tests
        run: |
