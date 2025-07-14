@@ -3,11 +3,21 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel, Field, field_validator  # Use @validator for Pydantic 1.x
+from pydantic import BaseModel, Field, field_validator
 from fastapi.exceptions import RequestValidationError
-from app.operations import add, subtract, multiply, divide  # Ensure correct import path
+from app.operations import add, subtract, multiply, divide
+from app.database import Base, engine  # ✅ Moved up here
+from app.models.user import User       # ✅ Moved up here
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from app.database import SessionLocal
+from app.schemas.user import UserCreate, UserRead
+from app.utils.security import hash_password
+from app.utils.security import hash_password
+
 import uvicorn
 import logging
+
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -36,6 +46,13 @@ class OperationResponse(BaseModel):
 # Pydantic model for error response
 class ErrorResponse(BaseModel):
     error: str = Field(..., description="Error message")
+# Dependency to get DB session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # Custom Exception Handlers
 @app.exception_handler(HTTPException)
@@ -113,6 +130,31 @@ async def divide_route(operation: OperationRequest):
     except Exception as e:
         logger.error(f"Divide Operation Internal Error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+Base.metadata.create_all(bind=engine)
+@app.post("/register", response_model=UserRead)
+def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(
+        (User.username == user_data.username) | (User.email == user_data.email)
+    ).first()
+
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username or email already exists")
+
+    hashed_pw = hash_password(user_data.password)
+
+    new_user = User(
+        username=user_data.username,
+        email=user_data.email,
+        password_hash=hashed_pw,
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
+
+
