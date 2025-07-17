@@ -1,5 +1,8 @@
 # main.py
-
+from fastapi import Depends, FastAPI, HTTPException
+from app.database import get_db
+from app.schemas.calculation import CalculationCreate, CalculationRead
+from app.crud.calculation import create_calculation
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -14,16 +17,21 @@ from app.database import SessionLocal
 from app.schemas.user import UserCreate, UserRead
 from app.utils.security import hash_password
 from app.utils.security import hash_password
+app = FastAPI()  # <-- This must come before any @app.route
 
 import uvicorn
 import logging
 
-
+@app.post("/calculations/", response_model=CalculationRead)
+def create_new_calculation(calc: CalculationCreate, db: Session = Depends(get_db)):
+    try:
+        return create_calculation(db, calc)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+print("✅ /calculations route is loaded")
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-app = FastAPI()
 
 # Setup templates directory
 templates = Jinja2Templates(directory="templates")
