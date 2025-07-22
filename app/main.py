@@ -9,15 +9,21 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, field_validator
 from fastapi.exceptions import RequestValidationError
 from app.operations import add, subtract, multiply, divide
-from app.database import Base, engine  # ✅ Moved up here
-from app.models.user import User       # ✅ Moved up here
+from app.database import Base, engine  
+from app.models.user import User       
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.schemas.user import UserCreate, UserRead
 from app.utils.security import hash_password
 from app.utils.security import hash_password
-app = FastAPI()  # <-- This must come before any @app.route
+from app.routes.user_routes import router as user_router
+from app.routes import calculation_routes
+from fastapi.security import OAuth2PasswordBearer
+
+app = FastAPI()  
+app.include_router(calculation_routes.router)
+app.include_router(user_router)
 
 import uvicorn
 import logging
@@ -139,28 +145,7 @@ async def divide_route(operation: OperationRequest):
         logger.error(f"Divide Operation Internal Error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 Base.metadata.create_all(bind=engine)
-@app.post("/register", response_model=UserRead)
-def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
-    existing_user = db.query(User).filter(
-        (User.username == user_data.username) | (User.email == user_data.email)
-    ).first()
-
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Username or email already exists")
-
-    hashed_pw = hash_password(user_data.password)
-
-    new_user = User(
-        username=user_data.username,
-        email=user_data.email,
-        password_hash=hashed_pw,
-    )
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    return new_user
+app.include_router(user_router)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

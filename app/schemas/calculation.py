@@ -1,5 +1,4 @@
 # app/schemas/calculation.py
-
 from pydantic import BaseModel, Field, validator
 from typing import Literal, Optional
 
@@ -8,6 +7,7 @@ class CalculationCreate(BaseModel):
     a: float
     b: float
     type: Literal["Add", "Sub", "Multiply", "Divide"]
+    user_id: int
 
     @validator("b")
     def validate_divisor(cls, b, values):
@@ -22,6 +22,7 @@ class CalculationRead(BaseModel):
     b: float
     type: str
     result: Optional[float]
+    user_id: int
 
     class Config:
         orm_mode = True

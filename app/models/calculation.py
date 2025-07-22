@@ -5,7 +5,7 @@ from app.database import Base
 
 class Calculation(Base):
     __tablename__ = "calculations"
-
+    __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True, index=True)
     a = Column(Float, nullable=False)
     b = Column(Float, nullable=False)

@@ -1,27 +1,32 @@
 from sqlalchemy.orm import Session
-from app.schemas.calculation import CalculationCreate
 from app.models.calculation import Calculation
-from app.utils.calculation_factory import CalculationFactory
+from app.schemas.calculation import CalculationCreate
+def perform_operation(a: float, b: float, op_type: str) -> float:
+    if op_type == "Add":
+        return a + b
+    elif op_type == "Sub":
+        return a - b
+    elif op_type == "Multiply":
+        return a * b
+    elif op_type == "Divide":
+        if b == 0:
+            raise ValueError("Division by zero is not allowed.")
+        return a / b
+    else:
+        raise ValueError(f"Unsupported operation type: {op_type}")
 
 
-def create_calculation(db: Session, calc_in: CalculationCreate) -> Calculation:
-    # Use the factory to get the appropriate operation class
-    operation = CalculationFactory.get_operation(calc_in.type)
-    
-    # Compute the result using the operation class
-    result = operation(calc_in.a, calc_in.b)
-    
-    # Create a new Calculation model instance
-    db_calc = Calculation(
-        a=calc_in.a,
-        b=calc_in.b,
-        type=calc_in.type,
-        result=result
+def create_calculation(db: Session, calculation: CalculationCreate):
+    result = perform_operation(calculation.a, calculation.b, calculation.type)
+
+    new_calc = Calculation(
+        a=calculation.a,
+        b=calculation.b,
+        type=calculation.type,
+        result=result,
+        user_id=calculation.user_id
     )
-    
-    # Add to session and commit
-    db.add(db_calc)
+    db.add(new_calc)
     db.commit()
-    db.refresh(db_calc)
-    
-    return db_calc
+    db.refresh(new_calc)
+    return new_calc

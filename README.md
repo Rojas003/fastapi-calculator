@@ -76,3 +76,19 @@ Continuous Integration (CI) with pytest.
 Docker image build and push (if configured).
 
 Screenshot-ready for both workflow success and Docker Hub image.
+
+### What Was Completed Today (Final Backend Stage)
+
+- Fixed all BREAD (Browse, Read, Edit, Add, Delete) endpoints for `/calculations`
+- Implemented and cleaned up `crud/calculation.py` with full logic (create, read, update, delete)
+- Fixed Python import issues, including `app.models` and `app.auth`
+- Created a temporary `get_current_user()` function to simulate JWT login
+- Verified all FastAPI routes using `/docs`
+- Wrote and successfully ran integration test for calculation creation using `pytest`
+- Fixed `test_calculation.py` to include proper test structure and payload handling
+- Built and tested the Docker image locally using Docker Desktop
+- Pushed a fresh Docker image to Docker Hub:  
+  👉 [`rojas003/fastapi-calculator`](https://hub.docker.com/r/rojas003/fastapi-calculator)
+- Confirmed the container runs properly and is exposed on port `8000`
+
+This wraps up all the backend requirements for the assignment — the system is fully functional and Docker-deployable.
