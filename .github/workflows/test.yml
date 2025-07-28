@@ -1,57 +1,43 @@
-name: CI/CD
+name: Run Tests and Deploy to Docker Hub
 
 on:
- push:
-   branches: [ main ]
- pull_request:
-   branches: [ main ]
+  push:
+    branches:
+      - main
 
 jobs:
- test:
-   runs-on: ubuntu-latest
-   steps:
-     - uses: actions/checkout@v3
-     - uses: actions/setup-python@v4
-       with:
-         python-version: '3.10'
-         
-     - uses: actions/cache@v3
-       with:
-         path: |
-           venv
-           ~/.cache/pip
-         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-         restore-keys: |
-           ${{ runner.os }}-pip-
+  build-test-deploy:
+    runs-on: ubuntu-latest
 
-     - name: Install dependencies
-       run: |
-         python -m venv venv
-         source venv/bin/activate
-         pip install -r requirements.txt
-         
-     - name: Install Playwright browsers
-       run: |
-        source venv/bin/activate
-         playwright install --with-deps
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-     - name: Run tests
-       run: |
-         source venv/bin/activate
-         pytest tests/unit/ --cov=src --junitxml=test-results/junit.xml
-         pytest tests/integration/
-        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
 
- security:
-   needs: test
-   runs-on: ubuntu-latest
-   steps:
-     - uses: actions/checkout@v4          
- deploy:
-   needs: security
-   if: github.ref == 'refs/heads/main'
-   runs-on: ubuntu-latest
-   environment: production
-   steps:
-     - uses: actions/checkout@v4
-    
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-playwright
+          playwright install
+
+      - name: Run tests
+        run: |
+          pytest
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: Rojas003/fastapi-calculator:latest
