@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Register</title>
+</head>
+<body>
+  <h2>User Registration</h2>
+  <form id="registerForm">
+    <input type="text" id="username" placeholder="Username" required><br>
+    <input type="email" id="email" placeholder="Email" required><br>
+    <input type="password" id="password" placeholder="Password" minlength="6" required><br>
+    <button type="submit">Register</button>
+  </form>
+  <p id="message"></p>
+
+<script>
+  const form = document.getElementById('registerForm');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    const res = await fetch('/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password })
+    });
+
+    const msg = document.getElementById('message');
+    const data = await res.text();  // Get raw response body
+
+    if (res.ok) {
+      msg.textContent = "✅ Registered successfully!";
+    } else {
+      msg.textContent = "❌ Registration failed.";
+      console.error("⚠️ Backend error:", data);
+    }
+  });
+</script>
+</body>
+</html>

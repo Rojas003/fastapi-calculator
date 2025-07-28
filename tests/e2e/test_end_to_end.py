@@ -30,7 +30,6 @@ def test_end_to_end_register_login_calculate():
         "a": 10,
         "b": 5,
         "type": "Add",
-        "user_id": user_id
     }, headers=headers)
     assert calc_response.status_code == 200
     result_data = calc_response.json()

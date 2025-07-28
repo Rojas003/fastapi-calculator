@@ -45,3 +45,16 @@ def divide(a: float, b: float) -> float:
     # Perform division of a by b and return the result as a float
     result = a / b
     return result
+def calculate_result(a: float, b: float, operation_type: str) -> float:
+    if operation_type == "Add":
+        return a + b
+    elif operation_type == "Subtract":
+        return a - b
+    elif operation_type == "Multiply":
+        return a * b
+    elif operation_type == "Divide":
+        if b == 0:
+            raise ValueError("Cannot divide by zero")
+        return a / b
+    else:
+        raise ValueError("Invalid operation type")

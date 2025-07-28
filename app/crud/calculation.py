@@ -1,3 +1,4 @@
+from app.operations import calculate_result
 from sqlalchemy.orm import Session
 from app.models.calculation import Calculation
 from app.schemas.calculation import CalculationCreate
@@ -16,15 +17,13 @@ def perform_operation(a: float, b: float, op_type: str) -> float:
         raise ValueError(f"Unsupported operation type: {op_type}")
 
 
-def create_calculation(db: Session, calculation: CalculationCreate):
-    result = perform_operation(calculation.a, calculation.b, calculation.type)
-
+def create_calculation(db: Session, calc: CalculationCreate, user_id: int):
     new_calc = Calculation(
-        a=calculation.a,
-        b=calculation.b,
-        type=calculation.type,
-        result=result,
-        user_id=calculation.user_id
+        a=calc.a,
+        b=calc.b,
+        type=calc.type,
+        result=calculate_result(calc.a, calc.b, calc.type),
+        user_id=user_id
     )
     db.add(new_calc)
     db.commit()

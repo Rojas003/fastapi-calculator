@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.schemas.calculation import CalculationCreate, CalculationRead
-from app.models.calculation import Calculation
 from app.database import get_db
 from app.crud import calculation as calculation_crud
-from app.auth import get_current_user
+from app.auth.jwt_bearer import get_current_user
 from app.schemas.user import UserRead
 
 router = APIRouter()
