@@ -4,20 +4,25 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.database import get_db, Base
-from app.main import app  # ✅ Import existing app
+from app.main import app
 
-# Create a test database engine
+# ✅ Use a separate SQLite test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Drop all tables and recreate them fresh for tests
-Base.metadata.drop_all(bind=engine)
-Base.metadata.create_all(bind=engine)
+# ✅ Apply schema setup once per session
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_db():
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)  # Cleanup after test session
 
-# Override dependency
+# ✅ Dependency override for FastAPI
 def override_get_db():
     db = TestingSessionLocal()
     try:
@@ -25,10 +30,9 @@ def override_get_db():
     finally:
         db.close()
 
-# Override the default DB dependency with the test DB
 app.dependency_overrides[get_db] = override_get_db
 
-# Provide test client
+# ✅ Fixture for TestClient
 @pytest.fixture
 def client():
     return TestClient(app)
