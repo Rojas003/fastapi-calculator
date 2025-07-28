@@ -7,7 +7,6 @@ class CalculationCreate(BaseModel):
     a: float
     b: float
     type: Literal["Add", "Sub", "Multiply", "Divide"]
-    user_id: int
 
     @validator("b")
     def validate_divisor(cls, b, values):
