@@ -1,0 +1,27 @@
+{
+  "name": "fastapi-calculator",
+  "version": "1.0.0",
+  "description": "This directory contains data from the pytest's cache plugin, which provides the `--lf` and `--ff` options, as well as the `cache` fixture.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+"url": "git+https://github.com/Rojas003/fastapi-calculator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Rojas003/fastapi-calculator/issues"
+  },
+  "homepage": "https://github.com/Rojas003/fastapi-calculator#readme",
+  "devDependencies": {
+    "playwright": "^1.54.1"
+  }
+}
