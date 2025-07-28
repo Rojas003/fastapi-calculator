@@ -88,7 +88,55 @@ Screenshot-ready for both workflow success and Docker Hub image.
 - Fixed `test_calculation.py` to include proper test structure and payload handling
 - Built and tested the Docker image locally using Docker Desktop
 - Pushed a fresh Docker image to Docker Hub:  
-  👉 [`rojas003/fastapi-calculator`](https://hub.docker.com/r/rojas003/fastapi-calculator)
+   [`rojas003/fastapi-calculator`](https://hub.docker.com/r/rojas003/fastapi-calculator)
 - Confirmed the container runs properly and is exposed on port `8000`
 
 This wraps up all the backend requirements for the assignment — the system is fully functional and Docker-deployable.
+Authentication Enhancements
+Implemented JWT-based authentication with /register and /login routes.
+
+Built frontend HTML forms (register.html, login.html) using Fetch API to POST JSON payloads to the FastAPI backend.
+
+Successfully connected frontend UI to backend routes with validation and user feedback messages (✅ success / ❌ errors).
+
+ Testing Upgrades
+Added comprehensive unit, integration, and end-to-end (E2E) tests:
+
+Unit tests for password hashing and operation logic.
+
+Integration test for the calculation API with authenticated user.
+
+E2E test using Playwright for browser-based registration and login simulation.
+
+Fixed all test failures and validation errors (e.g., removed deprecated user_id field from CalculationCreate).
+
+Verified 100% passing test suite before deployment.
+
+ GitHub Actions CI/CD
+Workflow updates:
+
+Ensured Playwright and FastAPI server run before tests.
+
+Fixed Docker Hub push error by correcting casing in Docker username (Rojas003 ➜ rojas003).
+
+Updated secrets and ensured successful login for automated image push.
+
+Final GitHub Actions workflow:
+
+ Install dependencies
+
+ Run tests (unit, integration, E2E)
+
+ Build Docker image
+
+ Push image to Docker Hub
+
+ Documentation + Screenshots
+Captured screenshots for:
+
+ GitHub Actions successful run
+
+ Front-end Registration/Login success via browser
+
+ Test suite passing (terminal + coverage report)
+
