@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculations</title>
+</head>
+<body>
+    <h1>Your Calculations</h1>
+<button onclick="window.location.href='/calculations-page/add'">Add Calculation</button>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>A</th>
+                <th>B</th>
+                <th>Type</th>
+                <th>Result</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="calc-table"></tbody>
+    </table>
+
+    <script>
+        const token = localStorage.getItem('token');
+
+        async function fetchCalculations() {
+            const response = await fetch('/calculations', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            const table = document.getElementById('calc-table');
+            table.innerHTML = '';
+            data.forEach(calc => {
+                const row = `
+                    <tr>
+                        <td>${calc.id}</td>
+                        <td>${calc.a}</td>
+                        <td>${calc.b}</td>
+                        <td>${calc.type}</td>
+                        <td>${calc.result}</td>
+                        <td>
+                            <button onclick="editCalculation(${calc.id})">Edit</button>
+                            <button onclick="deleteCalculation(${calc.id})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+                table.innerHTML += row;
+            });
+        }
+
+        async function deleteCalculation(id) {
+            await fetch(`/calculations/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            fetchCalculations();
+        }
+
+        function editCalculation(id) {
+            window.location.href = `/calculation/edit/${id}`;
+        }
+
+        fetchCalculations();
+    </script>
+</body>
+</html>

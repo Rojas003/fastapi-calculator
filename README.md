@@ -97,7 +97,7 @@ Implemented JWT-based authentication with /register and /login routes.
 
 Built frontend HTML forms (register.html, login.html) using Fetch API to POST JSON payloads to the FastAPI backend.
 
-Successfully connected frontend UI to backend routes with validation and user feedback messages (✅ success / ❌ errors).
+Successfully connected frontend UI to backend routes with validation and user feedback messages ( success /  errors).
 
  Testing Upgrades
 Added comprehensive unit, integration, and end-to-end (E2E) tests:
@@ -139,4 +139,74 @@ Captured screenshots for:
  Front-end Registration/Login success via browser
 
  Test suite passing (terminal + coverage report)
+### What Was Completed Today BREAD Functions
 
+## Features
+
+- **User Authentication**
+  - Registration and login with JWT-based authentication.
+- **Calculation Management (BREAD)**
+  - **Browse**: View all calculations.
+  - **Read**: Retrieve individual calculations.
+  - **Edit**: Update existing calculations.
+  - **Add**: Create new calculations.
+  - **Delete**: Remove calculations.
+- **Frontend UI**
+  - HTML pages for registration, login, and calculation operations.
+  - Frontend forms integrated with backend API using `fetch()` requests.
+- **Database**
+  - SQLite database for persisting users and calculations.
+- **Automated Testing**
+  - **Unit Tests**: API endpoints tested with `pytest`.
+  - **Playwright E2E Tests**:
+    - Positive scenarios: Registration, login, calculation creation, update, and deletion.
+    - Negative scenarios: Invalid login, unauthorized access, and invalid calculation inputs.
+- **CI/CD Pipeline**
+  - GitHub Actions workflow to run all tests.
+  - Dockerized deployment with an automated push to Docker Hub.
+
+---
+
+## Project Structure
+
+fastapi-calculator/
+│
+├── app/
+│ ├── auth/
+│ │ ├── jwt_bearer.py
+│ │ └── jwt_handler.py
+│ ├── models/
+│ ├── routes/
+│ ├── templates/
+│ │ ├── login.html
+│ │ ├── register.html
+│ │ └── calculations.html
+│ ├── database.py
+│ └── main.py
+│
+├── tests/
+│ ├── e2e/
+│ │ ├── test_login_ui.py
+│ │ ├── test_login_failure_playwright.py
+│ │ ├── test_calculation_ui_positive.py
+│ │ ├── test_calculation_ui_negative.py
+│ │ └── test_end_to_end_register_login_calculate.py
+│ └── unit/
+│ └── test_calculation_negative.py
+│
+├── .github/workflows/test.yml
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── README.md
+## Docker Usage
+- Build the Docker Image
+docker build -t fastapi-calculator .
+
+- Tag the Image
+docker tag fastapi-calculator rojas003/fastapi-calculator:latest
+
+- Push to Docker Hub
+docker push rojas003/fastapi-calculator:latest
+
+Docker Hub Link: https://hub.docker.com/r/rojas003/fastapi-calculator

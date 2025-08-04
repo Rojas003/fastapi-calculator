@@ -1,17 +1,35 @@
-# app/calculation.py
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+from models.calculation import Calculation
+from schemas.calculation import CalculationCreate
 
-from sqlalchemy import Column, Integer, Float, String, ForeignKey
-from sqlalchemy.orm import relationship
-from app.database import Base
+def create_calculation(calculation: CalculationCreate, db: Session):
+    # Compute result based on calculation type
+    if calculation.type == "Add":
+        result = calculation.a + calculation.b
+    elif calculation.type == "Subtract":
+        result = calculation.a - calculation.b
+    elif calculation.type == "Multiply":
+        result = calculation.a * calculation.b
+    elif calculation.type == "Divide":
+        if calculation.b == 0:
+            raise HTTPException(status_code=400, detail="Division by zero is not allowed")
+        result = calculation.a / calculation.b
+    else:
+        raise HTTPException(status_code=400, detail="Invalid calculation type")
 
-class Calculation(Base):
-    __tablename__ = "calculations"
+    # Create a new Calculation instance (user_id is bypassed or set to None)
+    db_calculation = Calculation(
+        a=calculation.a,
+        b=calculation.b,
+        type=calculation.type,
+        result=result,
+        user_id=None  # Bypassing authentication
+    )
 
-    id = Column(Integer, primary_key=True, index=True)
-    a = Column(Float, nullable=False)
-    b = Column(Float, nullable=False)
-    type = Column(String, nullable=False)  # Can be Add, Sub, Multiply, Divide
-    result = Column(Float, nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    # Save to database
+    db.add(db_calculation)
+    db.commit()
+    db.refresh(db_calculation)
 
-    user = relationship("User", back_populates="calculations")
+    return db_calculation

@@ -36,14 +36,14 @@
         messageElement.style.display = 'block';
 
         if (res.status === 200) {
-          messageElement.textContent = `✅ ${data.message}`;
+          messageElement.textContent = ` ${data.message}`;
           // Optionally store token: localStorage.setItem('token', data.access_token);
         } else {
-          messageElement.textContent = `❌ ${data.message || "Login failed."}`;
+          messageElement.textContent = ` ${data.message || "Login failed."}`;
         }
       } catch (error) {
         console.error("Login error:", error);
-        messageElement.textContent = "❌ Error during login.";
+        messageElement.textContent = " Error during login.";
         messageElement.style.display = 'block';
       }
     });

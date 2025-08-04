@@ -1,31 +1,54 @@
-from app.operations import calculate_result
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 from app.models.calculation import Calculation
 from app.schemas.calculation import CalculationCreate
-def perform_operation(a: float, b: float, op_type: str) -> float:
-    if op_type == "Add":
-        return a + b
-    elif op_type == "Sub":
-        return a - b
-    elif op_type == "Multiply":
-        return a * b
-    elif op_type == "Divide":
-        if b == 0:
-            raise ValueError("Division by zero is not allowed.")
-        return a / b
-    else:
-        raise ValueError(f"Unsupported operation type: {op_type}")
 
+def create_calculation(db: Session, calc: CalculationCreate, user_id: int = None):
+    """Create a new calculation and compute result before saving."""
 
-def create_calculation(db: Session, calc: CalculationCreate, user_id: int):
-    new_calc = Calculation(
+    calculation = Calculation(
         a=calc.a,
         b=calc.b,
         type=calc.type,
-        result=calculate_result(calc.a, calc.b, calc.type),
         user_id=user_id
     )
-    db.add(new_calc)
+
+    try:
+        calculation.result = calculation.compute_result()  # ✅ compute result before saving
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    db.add(calculation)
     db.commit()
-    db.refresh(new_calc)
-    return new_calc
+    db.refresh(calculation)
+    return calculation
+
+
+def get_calculation_by_id(db: Session, calc_id: int, user_id: int = None):
+    return db.query(Calculation).filter(Calculation.id == calc_id).first()
+
+
+def update_calculation(db: Session, db_calc: Calculation, updated_data: CalculationCreate):
+    db_calc.a = updated_data.a
+    db_calc.b = updated_data.b
+    db_calc.type = updated_data.type
+
+    try:
+        db_calc.result = db_calc.compute_result()  # ✅ recompute result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    db.commit()
+    db.refresh(db_calc)
+    return db_calc
+
+
+def delete_calculation(db: Session, calc_id: int, user_id: int = None):
+    calc = get_calculation_by_id(db, calc_id, user_id)
+    if calc:
+        db.delete(calc)
+        db.commit()
+
+
+def get_all_calculations(db: Session, user_id: int = None):
+    return db.query(Calculation).all()

@@ -21,20 +21,26 @@
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
 
-    const res = await fetch('/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password })
-    });
+    try {
+      const res = await fetch('/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password })
+      });
 
-    const msg = document.getElementById('message');
-    const data = await res.text();  // Get raw response body
+      const data = await res.json(); // ✅ Parse as JSON
+      const msg = document.getElementById('message');
 
-    if (res.ok) {
-      msg.textContent = "✅ Registered successfully!";
-    } else {
-      msg.textContent = "❌ Registration failed.";
-      console.error("⚠️ Backend error:", data);
+      if (res.ok) {
+        msg.textContent = data.message; // e.g. "Registered successfully"
+        msg.style.color = "green";
+      } else {
+        msg.textContent = data.message || "Registration failed.";
+        msg.style.color = "red";
+      }
+    } catch (error) {
+      console.error("Frontend error:", error);
+      document.getElementById('message').textContent = "Network error. Try again.";
     }
   });
 </script>

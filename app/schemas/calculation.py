@@ -1,7 +1,5 @@
-# app/schemas/calculation.py
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, validator
 from typing import Literal, Optional
-
 
 class CalculationCreate(BaseModel):
     a: float
@@ -15,13 +13,13 @@ class CalculationCreate(BaseModel):
         return b
 
 
-class CalculationRead(BaseModel):
+class CalculationResponse(BaseModel):
     id: int
     a: float
     b: float
     type: str
     result: Optional[float]
-    user_id: int
+    user_id: Optional[int]  # allow NULL in the response
 
     class Config:
-        orm_mode = True
+        from_attributes = True

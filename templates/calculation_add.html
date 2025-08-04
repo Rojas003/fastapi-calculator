@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Calculation</title>
+</head>
+<body>
+    <h1>Add Calculation</h1>
+    <form id="calc-form">
+        <label>A: <input type="number" step="any" id="a" required></label><br>
+        <label>B: <input type="number" step="any" id="b" required></label><br>
+        <label>Type:
+            <select id="type">
+                <option value="Add">Add</option>
+                <option value="Sub">Sub</option>
+                <option value="Multiply">Multiply</option>
+                <option value="Divide">Divide</option>
+            </select>
+        </label><br>
+        <button type="submit">Create</button>
+    </form>
+<button onclick="window.location.href='/calculations-page'">Back</button>
+
+    <script>
+        const token = localStorage.getItem('token');
+        document.getElementById('calc-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                a: parseFloat(document.getElementById('a').value),
+                b: parseFloat(document.getElementById('b').value),
+                type: document.getElementById('type').value
+            };
+
+            await fetch('/calculations', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+    window.location.href = '/calculations-page';
+        });
+    </script>
+</body>
+</html>

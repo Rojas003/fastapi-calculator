@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Calculation</title>
+</head>
+<body>
+    <h1>Edit Calculation</h1>
+    <form id="calc-form">
+        <label>A: <input type="number" step="any" id="a" required></label><br>
+        <label>B: <input type="number" step="any" id="b" required></label><br>
+        <label>Type:
+            <select id="type">
+                <option value="Add">Add</option>
+                <option value="Sub">Sub</option>
+                <option value="Multiply">Multiply</option>
+                <option value="Divide">Divide</option>
+            </select>
+        </label><br>
+        <button type="submit">Update</button>
+    </form>
+<button onclick="window.location.href='/calculations-page'">Back</button>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const calcId = window.location.pathname.split('/').pop();
+
+        async function loadCalculation() {
+            const res = await fetch(`/calculations/${calcId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const calc = await res.json();
+            document.getElementById('a').value = calc.a;
+            document.getElementById('b').value = calc.b;
+            document.getElementById('type').value = calc.type;
+        }
+
+        document.getElementById('calc-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                a: parseFloat(document.getElementById('a').value),
+                b: parseFloat(document.getElementById('b').value),
+                type: document.getElementById('type').value
+            };
+
+            await fetch(`/calculations/${calcId}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+        window.location.href = '/calculations-page';
+        });
+
+        loadCalculation();
+    </script>
+</body>
+</html>

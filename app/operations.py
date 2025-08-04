@@ -3,58 +3,45 @@
 """
 Module: operations.py
 
-This module contains basic arithmetic functions that perform addition, subtraction,
-multiplication, and division of two numbers. These functions are foundational for
-building more complex applications, such as calculators or financial tools.
+This module contains arithmetic functions (add, subtract, multiply, divide) and a 
+single entry point `calculate_result` that determines the correct operation based 
+on the provided type.
 
 Functions:
-- add(a: Union[int, float], b: Union[int, float]) -> Union[int, float]: Returns the sum of a and b.
-- subtract(a: Union[int, float], b: Union[int, float]) -> Union[int, float]: Returns the difference when b is subtracted from a.
-- multiply(a: Union[int, float], b: Union[int, float]) -> Union[int, float]: Returns the product of a and b.
-- divide(a: Union[int, float], b: Union[int, float]) -> float: Returns the quotient when a is divided by b. Raises ValueError if b is zero.
-
-Usage:
-These functions can be imported and used in other modules or integrated into APIs
-to perform arithmetic operations based on user input.
+- add(a, b) -> float
+- subtract(a, b) -> float
+- multiply(a, b) -> float
+- divide(a, b) -> float
+- calculate_result(a, b, operation_type) -> float
 """
 
-from typing import Union  # Import Union for type hinting multiple possible types
+from typing import Union
 
-# Define a type alias for numbers that can be either int or float
 Number = Union[int, float]
 
-def add(a: float, b: float) -> float:
+def add(a: Number, b: Number) -> float:
     return a + b
 
-def subtract(a: float, b: float) -> float:
+def subtract(a: Number, b: Number) -> float:
     return a - b
 
-def multiply(a: float, b: float) -> float:
+def multiply(a: Number, b: Number) -> float:
     return a * b
 
-def divide(a: float, b: float) -> float:
+def divide(a: Number, b: Number) -> float:
     if b == 0:
         raise ValueError("Cannot divide by zero.")
     return a / b
 
-    # Check if the divisor is zero to prevent division by zero
-    if b == 0:
-        # Raise a ValueError with a descriptive message
-        raise ValueError("Cannot divide by zero!")
-    
-    # Perform division of a by b and return the result as a float
-    result = a / b
-    return result
-def calculate_result(a: float, b: float, operation_type: str) -> float:
+def calculate_result(a: Number, b: Number, operation_type: str) -> float:
+    operation_type = operation_type.capitalize()  # normalize case (e.g. "add" -> "Add")
     if operation_type == "Add":
-        return a + b
+        return add(a, b)
     elif operation_type == "Subtract":
-        return a - b
+        return subtract(a, b)
     elif operation_type == "Multiply":
-        return a * b
+        return multiply(a, b)
     elif operation_type == "Divide":
-        if b == 0:
-            raise ValueError("Cannot divide by zero")
-        return a / b
+        return divide(a, b)
     else:
-        raise ValueError("Invalid operation type")
+        raise ValueError(f"Invalid operation type: {operation_type}")

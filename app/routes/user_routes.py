@@ -1,67 +1,52 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
-from app.schemas.user import UserCreate, UserRead, UserLogin
-from app.models.user import User
+from app.schemas.calculation import CalculationCreate, CalculationResponse
+from app.models.calculation import Calculation
 from app.database import get_db
-from app.auth.jwt_handler import create_access_token
-from app.auth.security import authenticate_user
-from app.crud.user import get_user_by_email, create_user_in_db
 
 router = APIRouter()
 
-# ✅ API route: Raw user registration (used in API tests, not frontend)
-@router.post("/users/", response_model=UserRead)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = get_user_by_email(db, email=user.email)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return create_user_in_db(db, user)
+# CREATE calculation
+@router.post("/calculations/", response_model=CalculationResponse)
+def create_calculation(calculation: CalculationCreate, db: Session = Depends(get_db)):
+    user_id = 1  # Bypass authentication
+    new_calc = Calculation(**calculation.dict(), user_id=user_id)
+    db.add(new_calc)
+    db.commit()
+    db.refresh(new_calc)
+    return new_calc
 
-# ✅ API route: Login and return JWT access token (for programmatic access)
-@router.post("/token")
-def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
-):
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+# READ single calculation
+@router.get("/calculations/{calc_id}", response_model=CalculationResponse)
+def read_calculation(calc_id: int, db: Session = Depends(get_db)):
+    calc = db.query(Calculation).filter(Calculation.id == calc_id).first()
+    if not calc:
+        raise HTTPException(status_code=404, detail="Calculation not found")
+    return calc
 
-# ✅ Frontend POST /register (used by register.html via fetch)
-@router.post("/register")
-async def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = get_user_by_email(db, email=user.email)
-    if db_user:
-        return JSONResponse(
-            content={"message": "Email already registered."},
-            status_code=400
-        )
-    create_user_in_db(db, user)
-    return JSONResponse(
-        content={"message": "Registered successfully"},
-        status_code=201
-    )
+# LIST all calculations
+@router.get("/calculations/", response_model=list[CalculationResponse])
+def list_calculations(db: Session = Depends(get_db)):
+    return db.query(Calculation).all()
 
-# ✅ Frontend POST /login (used by login.html via fetch)
-@router.post("/login")
-async def login_user(user: UserLogin, db: Session = Depends(get_db)):
-    auth_user = authenticate_user(db, user.email, user.password)
-    if not auth_user:
-        return JSONResponse(
-            content={"message": "Invalid credentials"},
-            status_code=401
-        )
-    access_token = create_access_token(data={"sub": auth_user.email})
-    return JSONResponse(
-        content={"message": "Login successful", "access_token": access_token},
-        status_code=200
-    )
+# UPDATE calculation
+@router.put("/calculations/{calc_id}", response_model=CalculationResponse)
+def update_calculation(calc_id: int, calculation: CalculationCreate, db: Session = Depends(get_db)):
+    calc = db.query(Calculation).filter(Calculation.id == calc_id).first()
+    if not calc:
+        raise HTTPException(status_code=404, detail="Calculation not found")
+    for key, value in calculation.dict().items():
+        setattr(calc, key, value)
+    db.commit()
+    db.refresh(calc)
+    return calc
+
+# DELETE calculation
+@router.delete("/calculations/{calc_id}")
+def delete_calculation(calc_id: int, db: Session = Depends(get_db)):
+    calc = db.query(Calculation).filter(Calculation.id == calc_id).first()
+    if not calc:
+        raise HTTPException(status_code=404, detail="Calculation not found")
+    db.delete(calc)
+    db.commit()
+    return {"message": "Calculation deleted successfully"}

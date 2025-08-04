@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from app.database import get_db, Base
 from app.main import app
 
-# ✅ Use a separate SQLite test database
+#  Use a separate SQLite test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
 engine = create_engine(
@@ -14,7 +14,7 @@ engine = create_engine(
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# ✅ Apply schema setup once per session
+#  Apply schema setup once per session
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db():
     Base.metadata.drop_all(bind=engine)
@@ -22,7 +22,7 @@ def setup_test_db():
     yield
     Base.metadata.drop_all(bind=engine)  # Cleanup after test session
 
-# ✅ Dependency override for FastAPI
+#  Dependency override for FastAPI
 def override_get_db():
     db = TestingSessionLocal()
     try:
@@ -32,7 +32,7 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 
-# ✅ Fixture for TestClient
+# Fixture for TestClient
 @pytest.fixture
 def client():
     return TestClient(app)

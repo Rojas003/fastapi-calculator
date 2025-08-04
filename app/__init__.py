@@ -1,3 +1,3 @@
-from app.database import Base, engine
+from app.models.user import User
+from app.models.calculation import Calculation
 
-Base.metadata.create_all(bind=engine)
