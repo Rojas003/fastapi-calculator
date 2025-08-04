@@ -23,16 +23,33 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-playwright
-          playwright install
+
+      # Install Playwright browsers
+      - name: Install Playwright Browsers
+        uses: microsoft/playwright-github-action@v1
 
       - name: Start FastAPI server
         run: |
           uvicorn app.main:app --host 127.0.0.1 --port 8000 &
-          sleep 5
+          echo "Waiting for FastAPI server to start..."
+          for i in {1..20}; do
+            if curl -s http://127.0.0.1:8000/docs > /dev/null; then
+              echo "FastAPI server is up!"
+              break
+            fi
+            echo "Waiting for server... ($i)"
+            sleep 2
+          done
 
-      - name: Run tests
+      # Run backend tests
+      - name: Run API tests
         run: |
-          pytest
+          pytest tests/integration tests/e2e/test_end_to_end.py --maxfail=1 --disable-warnings -q
+
+      # Run Playwright UI tests
+      - name: Run Playwright UI tests
+        run: |
+          pytest tests/e2e/test_register_playwright.py tests/e2e/test_login_playwright.py tests/e2e/test_calculation_ui_positive.py tests/e2e/test_calculation_ui_negative.py
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
