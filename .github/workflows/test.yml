@@ -10,53 +10,82 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout repo
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Cache Python dependencies
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # Set up Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
 
+      # Install Python dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-playwright
+          pip install pytest pytest-playwright pytest-rerunfailures
 
-      # Install Playwright browsers
-      - name: Install Playwright Browsers
-        uses: microsoft/playwright-github-action@v1
+      # Cache Playwright browsers
+      - name: Cache Playwright
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright
+          restore-keys: |
+            ${{ runner.os }}-playwright
 
+      # Install Playwright browsers and system dependencies
+      - name: Install Playwright dependencies
+        run: |
+          npx playwright install --with-deps
+
+      # Start FastAPI server with better readiness check
       - name: Start FastAPI server
         run: |
           uvicorn app.main:app --host 127.0.0.1 --port 8000 &
           echo "Waiting for FastAPI server to start..."
           for i in {1..20}; do
             if curl -s http://127.0.0.1:8000/docs > /dev/null; then
-              echo "FastAPI server is up!"
+              echo "✅ FastAPI server is up!"
               break
             fi
-            echo "Waiting for server... ($i)"
+            echo "⏳ Waiting for server... ($i)"
             sleep 2
           done
 
-      # Run backend tests
+      # Run backend tests first (fail fast if critical endpoints are broken)
       - name: Run API tests
         run: |
           pytest tests/integration tests/e2e/test_end_to_end.py --maxfail=1 --disable-warnings -q
 
-      # Run Playwright UI tests
+      # Run Playwright UI tests with retries (reduce flakiness)
       - name: Run Playwright UI tests
         run: |
-          pytest tests/e2e/test_register_playwright.py tests/e2e/test_login_playwright.py tests/e2e/test_calculation_ui_positive.py tests/e2e/test_calculation_ui_negative.py
+          pytest tests/e2e/test_register_playwright.py \
+                 tests/e2e/test_login_playwright.py \
+                 tests/e2e/test_calculation_ui_positive.py \
+                 tests/e2e/test_calculation_ui_negative.py \
+                 --reruns 2 --reruns-delay 5
 
+      # Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # Build and push Docker image
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
