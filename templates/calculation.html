@@ -6,7 +6,39 @@
 </head>
 <body>
     <h1>Your Calculations</h1>
-<button onclick="window.location.href='/calculations-page/add'">Add Calculation</button>
+    <button onclick="window.location.href='/calculations-page/add'">Add Calculation</button>
+
+    <p id="message" style="color: red;">{{ message or '' }}</p>
+
+    <!-- Calculation Input Form -->
+    <div id="calculation-form">
+        <label for="a">Number 1:</label>
+        <input type="number" id="a" name="a" required>
+        <br><br>
+
+        <label for="b">Number 2:</label>
+        <input type="number" id="b" name="b" required>
+        <br><br>
+
+        <label for="type">Operation:</label>
+        <select id="type" name="type">
+            <option value="add">Add</option>
+            <option value="subtract">Subtract</option>
+            <option value="multiply">Multiply</option>
+            <option value="division">Division</option>
+            <option value="addition">Addition (invalid)</option> <!-- for negative test -->
+        </select>
+        <br><br>
+
+        <button type="submit" onclick="addCalculation()">Submit</button>
+    </div>
+
+    <!-- Result display for Playwright (always visible) -->
+    <div id="result" style="margin-top: 10px; color: green;">Result will appear here</div>
+
+    <!-- Add this div for Playwright to find the calculation ID -->
+    <div id="calc-id" style="display:none"></div>
+
     <table border="1">
         <thead>
             <tr>
@@ -22,26 +54,22 @@
     </table>
 
     <script>
-        const token = localStorage.getItem('token');
-
         async function fetchCalculations() {
-            const response = await fetch('/calculations', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await fetch('/calculations');
             const data = await response.json();
             const table = document.getElementById('calc-table');
             table.innerHTML = '';
-            data.forEach(calc => {
+            (data.calculations || []).forEach(calc => {
                 const row = `
                     <tr>
                         <td>${calc.id}</td>
-                        <td>${calc.a}</td>
-                        <td>${calc.b}</td>
-                        <td>${calc.type}</td>
+                        <td>${calc.num1}</td>
+                        <td>${calc.num2}</td>
+                        <td>${calc.operation}</td>
                         <td>${calc.result}</td>
                         <td>
-                            <button onclick="editCalculation(${calc.id})">Edit</button>
-                            <button onclick="deleteCalculation(${calc.id})">Delete</button>
+                            <button id="edit-calculation-${calc.id}" onclick="editCalculation(${calc.id})">Edit</button>
+                            <button id="delete-calculation-${calc.id}" onclick="deleteCalculation(${calc.id})">Delete</button>
                         </td>
                     </tr>
                 `;
@@ -49,12 +77,48 @@
             });
         }
 
-        async function deleteCalculation(id) {
-            await fetch(`/calculations/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
+        async function addCalculation() {
+            const num1 = document.getElementById('a').value;
+            const num2 = document.getElementById('b').value;
+            const operation = document.getElementById('type').value;
+            const messageEl = document.getElementById('message');
+            const resultEl = document.getElementById('result');
+
+            const response = await fetch('/calculations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ num1: Number(num1), num2: Number(num2), operation })
             });
-            fetchCalculations();
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                messageEl.textContent = result.detail || "An error occurred";
+                messageEl.style.color = "red";
+                resultEl.textContent = "";
+                document.getElementById('calc-id').textContent = "";
+            } else {
+                messageEl.textContent = "Calculation added successfully";
+                messageEl.style.color = "green";
+                resultEl.textContent = `Result: ${result.result}`;
+                document.getElementById('calc-id').textContent = result.id;
+                await fetchCalculations(); // <-- add await here
+            }
+        }
+
+        async function deleteCalculation(id) {
+            const messageEl = document.getElementById('message');
+
+            const response = await fetch(`/calculations/${id}`, { method: 'DELETE' });
+
+            if (response.ok) {
+                messageEl.textContent = "Calculation deleted successfully";
+                messageEl.style.color = "green";
+                fetchCalculations();
+            } else {
+                messageEl.textContent = "Failed to delete calculation";
+                messageEl.style.color = "red";
+            }
         }
 
         function editCalculation(id) {

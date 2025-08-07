@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Delete Calculation</title>
+</head>
+<body>
+    <h1>Delete Calculation</h1>
+    <div id="message"></div>
+
+    <button id="delete-btn">Confirm Delete</button>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const urlParts = window.location.pathname.split('/');
+        const calcId = urlParts[urlParts.length - 1];
+
+        async function checkCalculation() {
+            const response = await fetch(`/calculations/${calcId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            const messageEl = document.getElementById('message');
+            const deleteBtn = document.getElementById('delete-btn');
+
+            if (response.status === 404) {
+                messageEl.innerText = "Calculation not found";
+                deleteBtn.style.display = "none";
+            }
+        }
+
+        document.getElementById('delete-btn').addEventListener('click', async () => {
+            const response = await fetch(`/calculations/${calcId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            const messageEl = document.getElementById('message');
+            if (response.status === 404) {
+                messageEl.innerText = "Calculation not found";
+            } else if (!response.ok) {
+                messageEl.innerText = "Error deleting calculation";
+            } else {
+                messageEl.innerText = "Calculation deleted successfully!";
+            }
+        });
+
+        checkCalculation();
+    </script>
+</body>
+</html>

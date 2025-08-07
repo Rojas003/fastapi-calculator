@@ -1,20 +1,21 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 
-class UserCreate(BaseModel):
-    username: str
+# Registration request schema
+class UserRegisterRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=6)
+
+# Login request schema
+class UserLoginRequest(BaseModel):
     email: EmailStr
     password: str
 
-class UserRead(BaseModel):
+# Response schema for returning user info (excluding password)
+class UserResponse(BaseModel):
     id: int
-    username: str
     email: EmailStr
     created_at: datetime
 
     class Config:
-        orm_mode = True
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
-
+        from_attributes = True

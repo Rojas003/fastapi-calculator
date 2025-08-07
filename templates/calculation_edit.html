@@ -6,55 +6,93 @@
 </head>
 <body>
     <h1>Edit Calculation</h1>
-    <form id="calc-form">
-        <label>A: <input type="number" step="any" id="a" required></label><br>
-        <label>B: <input type="number" step="any" id="b" required></label><br>
-        <label>Type:
-            <select id="type">
-                <option value="Add">Add</option>
-                <option value="Sub">Sub</option>
-                <option value="Multiply">Multiply</option>
-                <option value="Divide">Divide</option>
-            </select>
-        </label><br>
+    <p id="message" style="display:none; color:red;"></p>
+
+    <form id="edit-form">
+        <label for="a">A:</label>
+        <input type="number" id="a" name="a" required><br><br>
+
+        <label for="b">B:</label>
+        <input type="number" id="b" name="b" required><br><br>
+
+        <label for="type">Type:</label>
+        <select id="type" name="type" required>
+            <option value="Add">Add</option>
+            <option value="Subtract">Subtract</option>
+            <option value="Multiply">Multiply</option>
+            <option value="Divide">Divide</option>
+        </select><br><br>
+
         <button type="submit">Update</button>
     </form>
-<button onclick="window.location.href='/calculations-page'">Back</button>
 
     <script>
         const token = localStorage.getItem('token');
-        const calcId = window.location.pathname.split('/').pop();
+        const messageElement = document.getElementById("message");
+        const form = document.getElementById("edit-form");
 
-        async function loadCalculation() {
-            const res = await fetch(`/calculations/${calcId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const calc = await res.json();
-            document.getElementById('a').value = calc.a;
-            document.getElementById('b').value = calc.b;
-            document.getElementById('type').value = calc.type;
+        const calculationId = window.location.pathname.split("/").pop();
+
+        async function fetchCalculation() {
+            try {
+                const response = await fetch(`/calculations/${calculationId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    messageElement.innerText = errorData.detail || "Calculation not found.";
+                    messageElement.style.display = "block";
+                    form.style.display = "none";
+                    return;
+                }
+
+                const calc = await response.json();
+                document.getElementById("a").value = calc.a;
+                document.getElementById("b").value = calc.b;
+                document.getElementById("type").value = calc.type;
+                messageElement.style.display = "none";
+            } catch (error) {
+                messageElement.innerText = "Error loading calculation.";
+                messageElement.style.display = "block";
+                form.style.display = "none";
+            }
         }
 
-        document.getElementById('calc-form').addEventListener('submit', async (e) => {
+        form.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const payload = {
-                a: parseFloat(document.getElementById('a').value),
-                b: parseFloat(document.getElementById('b').value),
-                type: document.getElementById('type').value
-            };
+            const a = document.getElementById("a").value;
+            const b = document.getElementById("b").value;
+            const type = document.getElementById("type").value;
 
-            await fetch(`/calculations/${calcId}`, {
-                method: 'PUT',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            });
-        window.location.href = '/calculations-page';
+            try {
+                const response = await fetch(`/calculations/${calculationId}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ a: parseFloat(a), b: parseFloat(b), type })
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    messageElement.innerText = result.detail || "Failed to update calculation.";
+                    messageElement.style.color = "red";
+                    messageElement.style.display = "block";
+                } else {
+                    messageElement.innerText = "Calculation updated successfully.";
+                    messageElement.style.color = "green";
+                    messageElement.style.display = "block";
+                }
+            } catch (error) {
+                messageElement.innerText = "Error updating calculation.";
+                messageElement.style.color = "red";
+                messageElement.style.display = "block";
+            }
         });
 
-        loadCalculation();
+        fetchCalculation();
     </script>
 </body>
 </html>

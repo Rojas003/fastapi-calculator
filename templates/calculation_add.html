@@ -5,41 +5,72 @@
     <title>Add Calculation</title>
 </head>
 <body>
-    <h1>Add Calculation</h1>
+    <h1>Add a Calculation</h1>
+
     <form id="calc-form">
-        <label>A: <input type="number" step="any" id="a" required></label><br>
-        <label>B: <input type="number" step="any" id="b" required></label><br>
-        <label>Type:
-            <select id="type">
-                <option value="Add">Add</option>
-                <option value="Sub">Sub</option>
-                <option value="Multiply">Multiply</option>
-                <option value="Divide">Divide</option>
-            </select>
-        </label><br>
-        <button type="submit">Create</button>
+        <label for="a">Number A:</label>
+        <input id="a" type="number" placeholder="Enter first number" required><br><br>
+
+        <label for="b">Number B:</label>
+        <input id="b" type="number" placeholder="Enter second number" required><br><br>
+
+        <label for="type">Operation:</label>
+        <select id="type" required>
+            <option value="invalid">Invalid</option>
+            <option value="addition">Addition</option>
+            <option value="subtraction">Subtraction</option>
+            <option value="multiplication">Multiplication</option>
+            <option value="division">Division</option>
+        </select><br><br>
+
+        <button type="submit">Submit</button>
     </form>
-<button onclick="window.location.href='/calculations-page'">Back</button>
+
+    <p id="message" style="color: red; display: none;"></p>
 
     <script>
         const token = localStorage.getItem('token');
+
         document.getElementById('calc-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const payload = {
-                a: parseFloat(document.getElementById('a').value),
-                b: parseFloat(document.getElementById('b').value),
-                type: document.getElementById('type').value
-            };
+            const num1 = document.getElementById('a').value;
+            const num2 = document.getElementById('b').value;
+            const operation = document.getElementById('type').value;
+            const messageEl = document.getElementById('message');
 
-            await fetch('/calculations', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            });
-    window.location.href = '/calculations-page';
+            try {
+                const response = await fetch('/calculations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        num1: parseFloat(num1),
+                        num2: parseFloat(num2),
+                        operation
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    // ✅ Show specific backend error (including division by zero)
+                    messageEl.textContent = result.error || result.detail || "An error occurred";
+                    messageEl.style.color = "red";
+                    messageEl.style.display = "block";
+                } else {
+                    messageEl.textContent = "Calculation added successfully";
+                    messageEl.style.color = "green";
+                    messageEl.style.display = "block";
+                    setTimeout(() => window.location.href = "/calculations", 1000);
+                }
+            } catch (err) {
+                console.error(err);
+                messageEl.textContent = "Failed to connect to server.";
+                messageEl.style.color = "red";
+                messageEl.style.display = "block";
+            }
         });
     </script>
 </body>

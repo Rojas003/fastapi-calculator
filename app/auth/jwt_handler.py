@@ -14,20 +14,20 @@ def create_access_token(user_id: int) -> str:
     """
     payload = {
         "user_id": user_id,
-        "exp": time.time() + 3600  # 1-hour expiry
+        "exp": int(time.time()) + 3600  # 1-hour expiry (use int for consistency)
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-def decode_access_token(token: str) -> dict:
+def decode_jwt(token: str) -> dict:
     """
     Decode a JWT token.
     :param token: JWT token string.
-    :return: Decoded payload.
+    :return: Decoded payload or None if invalid/expired.
     """
     try:
         decoded = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return decoded
+        return decoded  # If invalid or expired, jwt will raise an exception
     except jwt.ExpiredSignatureError:
-        return {"error": "Token has expired"}
+        return None
     except jwt.InvalidTokenError:
-        return {"error": "Invalid token"}
+        return None

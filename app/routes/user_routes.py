@@ -1,52 +1,45 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse  # <-- Add this import
 from sqlalchemy.orm import Session
-from app.schemas.calculation import CalculationCreate, CalculationResponse
-from app.models.calculation import Calculation
 from app.database import get_db
+from app.models.user import User
+from app.schemas.user import UserRegisterRequest, UserLoginRequest, UserResponse
+from app.utils.security import get_password_hash, verify_password
+from app.auth.jwt_handler import create_access_token
 
 router = APIRouter()
+logging.basicConfig(level=logging.INFO)
 
-# CREATE calculation
-@router.post("/calculations/", response_model=CalculationResponse)
-def create_calculation(calculation: CalculationCreate, db: Session = Depends(get_db)):
-    user_id = 1  # Bypass authentication
-    new_calc = Calculation(**calculation.dict(), user_id=user_id)
-    db.add(new_calc)
+@router.post("/users/register", response_model=UserResponse)
+def register_user(user: UserRegisterRequest, db: Session = Depends(get_db)):
+    logging.info(f"Attempting to register user: {user.email}")
+
+    # Check if the user already exists
+    existing_user = db.query(User).filter(User.email == user.email).first()
+    if existing_user:
+        logging.warning(f"Registration failed, user already exists: {user.email}")
+        raise HTTPException(status_code=400, detail="User already exists")
+
+    # Hash password and create new user
+    hashed_password = get_password_hash(user.password)
+    new_user = User(email=user.email, password=hashed_password)
+    db.add(new_user)
     db.commit()
-    db.refresh(new_calc)
-    return new_calc
+    db.refresh(new_user)
 
-# READ single calculation
-@router.get("/calculations/{calc_id}", response_model=CalculationResponse)
-def read_calculation(calc_id: int, db: Session = Depends(get_db)):
-    calc = db.query(Calculation).filter(Calculation.id == calc_id).first()
-    if not calc:
-        raise HTTPException(status_code=404, detail="Calculation not found")
-    return calc
+    logging.info(f"User registered successfully: {new_user.email}")
+    return new_user
 
-# LIST all calculations
-@router.get("/calculations/", response_model=list[CalculationResponse])
-def list_calculations(db: Session = Depends(get_db)):
-    return db.query(Calculation).all()
+@router.post("/users/login")
+def login_user(user: UserLoginRequest, db: Session = Depends(get_db)):
+    logging.info(f"Login attempt for user: {user.email}")
 
-# UPDATE calculation
-@router.put("/calculations/{calc_id}", response_model=CalculationResponse)
-def update_calculation(calc_id: int, calculation: CalculationCreate, db: Session = Depends(get_db)):
-    calc = db.query(Calculation).filter(Calculation.id == calc_id).first()
-    if not calc:
-        raise HTTPException(status_code=404, detail="Calculation not found")
-    for key, value in calculation.dict().items():
-        setattr(calc, key, value)
-    db.commit()
-    db.refresh(calc)
-    return calc
+    db_user = db.query(User).filter(User.email == user.email).first()
+    if not db_user or not verify_password(user.password, db_user.password):
+        logging.warning(f"Login failed for user: {user.email}")
+        return JSONResponse(status_code=401, content={"detail": "Invalid credentials"})
 
-# DELETE calculation
-@router.delete("/calculations/{calc_id}")
-def delete_calculation(calc_id: int, db: Session = Depends(get_db)):
-    calc = db.query(Calculation).filter(Calculation.id == calc_id).first()
-    if not calc:
-        raise HTTPException(status_code=404, detail="Calculation not found")
-    db.delete(calc)
-    db.commit()
-    return {"message": "Calculation deleted successfully"}
+    token = create_access_token(db_user.id)
+    logging.info(f"Login successful for user: {user.email}")
+    return {"access_token": token, "token_type": "bearer"}

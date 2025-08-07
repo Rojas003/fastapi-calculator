@@ -7,9 +7,8 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    password = Column(String, nullable=False)  # Renamed from hashed_password to match usage
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # ✅ Proper back_populates matches Calculation.user

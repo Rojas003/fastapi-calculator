@@ -1,25 +1,27 @@
-from pydantic import BaseModel, validator
-from typing import Literal, Optional
+from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional
 
 class CalculationCreate(BaseModel):
-    a: float
-    b: float
-    type: Literal["Add", "Sub", "Multiply", "Divide"]
+    operation: str
+    num1: float
+    num2: float
 
-    @validator("b")
-    def validate_divisor(cls, b, values):
-        if "type" in values and values["type"] == "Divide" and b == 0:
-            raise ValueError("Division by zero is not allowed.")
-        return b
-
+class CalculationUpdate(BaseModel):
+    operation: Optional[str] = None
+    num1: Optional[float] = None
+    num2: Optional[float] = None
 
 class CalculationResponse(BaseModel):
     id: int
-    a: float
-    b: float
-    type: str
-    result: Optional[float]
-    user_id: Optional[int]  # allow NULL in the response
+    operation: str
+    num1: float
+    num2: float
+    result: float
+    created_at: datetime
+    user_id: int
 
+class CalculationResponse(BaseModel):
+    ...
     class Config:
         from_attributes = True

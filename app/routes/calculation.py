@@ -1,84 +1,124 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Request, Depends
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from typing import List
-
-from app.schemas.calculation import CalculationCreate, CalculationResponse
-from app.crud.calculation import (
-    create_calculation,
-    get_calculation_by_id,
-    update_calculation,
-    delete_calculation,
-    get_all_calculations,
-)
+from pydantic import BaseModel
+from app.models.calculation import Calculation
 from app.database import get_db
+from app.auth.jwt_bearer import JWTBearer  # Make sure this import is present
 
-router = APIRouter(prefix="/calculations", tags=["Calculations"])
+router = APIRouter()
+templates = Jinja2Templates(directory="templates")
 
-def perform_operation(operation: str, num1: float, num2: float) -> float:
-    """Perform the calculation based on the operation type."""
-    if operation == "add":
-        return num1 + num2
-    elif operation == "subtract":
-        return num1 - num2
-    elif operation == "multiply":
-        return num1 * num2
-    elif operation == "divide":
-        if num2 == 0:
-            raise HTTPException(status_code=400, detail="Division by zero is not allowed")
-        return num1 / num2
+class CalculationRequest(BaseModel):
+    num1: float
+    num2: float
+    operation: str
+
+class CalculationUpdateRequest(BaseModel):
+    num1: float
+    num2: float
+    operation: str
+
+@router.get("/calculations-page/add", response_class=HTMLResponse)
+async def get_calculation_page(request: Request):
+    return templates.TemplateResponse("calculation.html", {"request": request, "message": ""})
+
+@router.get("/calculations")
+async def get_calculations(db: Session = Depends(get_db)):
+    calculations = db.query(Calculation).all()
+    return {
+        "calculations": [
+            {"id": calc.id, "num1": calc.a, "num2": calc.b, "operation": calc.type, "result": calc.result}
+            for calc in calculations
+        ]
+    }
+
+@router.post("/calculations", dependencies=[Depends(JWTBearer())])
+async def add_calculation(calc: CalculationRequest, db: Session = Depends(get_db)):
+    return await perform_calculation(calc, db)
+
+@router.post("/calculate")
+async def calculate(calc: CalculationRequest, db: Session = Depends(get_db)):
+    return await perform_calculation(calc, db)
+
+async def perform_calculation(calc: CalculationRequest, db: Session):
+    operation = calc.operation.strip().lower()
+    if operation in ["add", "addition"]:
+        result = calc.num1 + calc.num2
+    elif operation in ["subtract", "subtraction"]:
+        result = calc.num1 - calc.num2
+    elif operation in ["multiply", "multiplication"]:
+        result = calc.num1 * calc.num2
+    elif operation in ["divide", "division"]:
+        if calc.num2 == 0:
+            return JSONResponse(status_code=400, content={"detail": "Division by zero"})
+        result = calc.num1 / calc.num2
     else:
-        # Default to 0 if invalid (prevents NULL errors for screenshots)
-        return 0
+        return JSONResponse(status_code=400, content={"detail": "Invalid operation"})
 
-@router.post("/", response_model=CalculationResponse)
-def create_new_calculation(
-    calc: CalculationCreate,
-    db: Session = Depends(get_db)
-):
-    """Create a new calculation (auth removed)."""
-    result = perform_operation(calc.operation, calc.num1, calc.num2) or 0
-    return create_calculation(db=db, calc=calc, user_id=None, result=result)
+    calculation = Calculation(a=calc.num1, b=calc.num2, type=operation, result=result)
+    db.add(calculation)
+    db.commit()
+    db.refresh(calculation)
+    return {"id": calculation.id, "num1": calculation.a, "num2": calculation.b, "operation": calculation.type, "result": calculation.result, "message": "Calculation added successfully"}
 
-@router.get("/{calc_id}", response_model=CalculationResponse)
-def read_calculation(
-    calc_id: int,
-    db: Session = Depends(get_db)
-):
-    """Retrieve a single calculation by ID (auth removed)."""
-    db_calc = get_calculation_by_id(db, calc_id, None)
-    if not db_calc:
-        raise HTTPException(status_code=404, detail="Calculation not found")
-    return db_calc
+@router.get("/calculations/{calc_id}")
+async def get_calculation(calc_id: int, db: Session = Depends(get_db)):
+    calculation = db.query(Calculation).filter(Calculation.id == calc_id).first()
+    if not calculation:
+        return JSONResponse(status_code=404, content={"detail": "Calculation not found"})
+    return {"id": calculation.id, "num1": calculation.a, "num2": calculation.b, "operation": calculation.type, "result": calculation.result}
 
-@router.put("/{calc_id}", response_model=CalculationResponse)
-def update_existing_calculation(
-    calc_id: int,
-    updated_data: CalculationCreate,
-    db: Session = Depends(get_db)
-):
-    """Update an existing calculation (auth removed)."""
-    db_calc = get_calculation_by_id(db, calc_id, None)
-    if not db_calc:
-        raise HTTPException(status_code=404, detail="Calculation not found")
+@router.put("/calculations/{calc_id}")
+async def update_calculation(calc_id: int, calc_update: CalculationUpdateRequest, db: Session = Depends(get_db)):
+    calculation = db.query(Calculation).filter(Calculation.id == calc_id).first()
+    if not calculation:
+        return JSONResponse(status_code=404, content={"detail": "Calculation not found"})
 
-    result = perform_operation(updated_data.operation, updated_data.num1, updated_data.num2) or 0
-    return update_calculation(db, db_calc, updated_data, result)
+    operation = calc_update.operation.strip().lower()
+    if operation in ["add", "addition"]:
+        result = calc_update.num1 + calc_update.num2
+    elif operation in ["subtract", "subtraction"]:
+        result = calc_update.num1 - calc_update.num2
+    elif operation in ["multiply", "multiplication"]:
+        result = calc_update.num1 * calc_update.num2
+    elif operation in ["divide", "division"]:
+        if calc_update.num2 == 0:
+            return JSONResponse(status_code=400, content={"detail": "Division by zero"})
+        result = calc_update.num1 / calc_update.num2
+    else:
+        return JSONResponse(status_code=400, content={"detail": "Invalid operation"})
 
-@router.delete("/{calc_id}")
-def delete_existing_calculation(
-    calc_id: int,
-    db: Session = Depends(get_db)
-):
-    """Delete an existing calculation (auth removed)."""
-    db_calc = get_calculation_by_id(db, calc_id, None)
-    if not db_calc:
-        raise HTTPException(status_code=404, detail="Calculation not found")
-    delete_calculation(db, calc_id, None)
+    calculation.a = calc_update.num1
+    calculation.b = calc_update.num2
+    calculation.type = operation
+    calculation.result = result
+
+    db.commit()
+    db.refresh(calculation)
+    return {"id": calculation.id, "num1": calculation.a, "num2": calculation.b, "operation": calculation.type, "result": calculation.result, "message": "Calculation updated successfully"}
+
+@router.delete("/calculations/{calc_id}")
+async def delete_calculation(calc_id: int, db: Session = Depends(get_db)):
+    calculation = db.query(Calculation).filter(Calculation.id == calc_id).first()
+    if not calculation:
+        return JSONResponse(status_code=404, content={"detail": "Calculation not found"})
+    db.delete(calculation)
+    db.commit()
     return {"detail": "Calculation deleted successfully"}
 
-@router.get("/", response_model=List[CalculationResponse])
-def list_user_calculations(
-    db: Session = Depends(get_db)
-):
-    """List all calculations (auth removed)."""
-    return get_all_calculations(db, None)
+@router.get("/calculation/edit/{calc_id}", response_class=HTMLResponse)
+async def edit_calculation_page(calc_id: int, request: Request, db: Session = Depends(get_db)):
+    calculation = db.query(Calculation).filter(Calculation.id == calc_id).first()
+    if not calculation:
+        return templates.TemplateResponse("calculation.html", {"request": request, "message": "Calculation not found"})
+    return templates.TemplateResponse("calculation.html", {"request": request, "calculation": calculation, "message": ""})
+
+@router.get("/register-success", response_class=HTMLResponse)
+async def register_success(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request, "message": "Registered successfully"})
+
+@router.get("/login-success", response_class=HTMLResponse)
+async def login_success(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request, "message": "Logged in successfully"})

@@ -11,14 +11,29 @@ def test_login_ui(page):
     page.fill("#email", email)
     page.fill("#password", password)
     page.click("button[type='submit']")
+
+    # Wait for registration success
     page.wait_for_selector("#message")
+    page.wait_for_function(
+        "document.querySelector('#message').innerText.includes('Registered successfully')"
+    )
     assert "Registered successfully" in page.inner_text("#message")
 
-    # Then, log in using the same credentials
+    # Then, log in with same credentials
     page.goto("http://localhost:8000/login")
-
     page.fill("#email", email)
     page.fill("#password", password)
     page.click("button[type='submit']")
-    page.wait_for_selector("#message")
-    assert "Logged in successfully" in page.inner_text("#message")
+
+    # Wait for either login message OR redirect
+    try:
+        # Check if login message appears first
+        page.wait_for_function(
+            "document.querySelector('#message').innerText.includes('Login successful')",
+            timeout=2000
+        )
+        assert "Login successful" in page.inner_text("#message")
+    except:
+        # If message isn't visible quickly enough, verify redirect occurred
+        page.wait_for_url("**/calculations-page", timeout=3000)
+        assert "/calculations-page" in page.url
