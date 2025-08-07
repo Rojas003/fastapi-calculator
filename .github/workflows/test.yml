@@ -17,11 +17,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Set up Python
+      # 2. Set up Python (match your local version)
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.13"  # Changed from 3.11 to match your local setup
 
       # 3. Cache dependencies
       - name: Cache dependencies
@@ -38,11 +38,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 5. Install Playwright and browsers
+      # 5. Install Playwright browsers (FIXED - use Python playwright, not npm)
       - name: Install Playwright browsers
         run: |
-          npm install -g playwright
-          npx playwright install --with-deps
+          playwright install chromium --with-deps
 
       # 6. Run pytest (fail fast if any test fails)
       - name: Run tests
