@@ -166,3 +166,7 @@ if __name__ == "__main__":
 @app.get("/profile", response_class=HTMLResponse)
 async def profile_page(request: Request):
     return templates.TemplateResponse("profile.html", {"request": request})
+
+@app.get("/preferences", response_class=HTMLResponse)
+async def preferences_page(request: Request):
+    return templates.TemplateResponse("preferences.html", {"request": request})
