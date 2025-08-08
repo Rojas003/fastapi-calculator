@@ -10,6 +10,7 @@ import uvicorn
 from app.database import Base, engine
 from app.routes.user_routes import router as user_router
 from app.routes.calculation import router as calculation_router
+from app.routes.activity_routes import router as activity_router
 from app.auth.jwt_bearer import JWTBearer
 from app.middleware.activity_middleware import ActivityTrackingMiddleware
 
@@ -23,7 +24,7 @@ Base.metadata.create_all(bind=engine)
 
 app.include_router(user_router, tags=["Users"])
 app.include_router(calculation_router, tags=["Calculations"])
-
+app.include_router(activity_router, tags=["Activity"])
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
