@@ -1,21 +1,49 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr
 from datetime import datetime
+from typing import Optional
 
-# Registration request schema
-class UserRegisterRequest(BaseModel):
+class UserBase(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=6)
 
-# Login request schema
-class UserLoginRequest(BaseModel):
-    email: EmailStr
+class UserRegisterRequest(UserBase):
     password: str
 
-# Response schema for returning user info (excluding password)
+class UserLoginRequest(UserBase):
+    password: str
+
+class UserProfileUpdate(BaseModel):
+    username: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone: Optional[str] = None
+    bio: Optional[str] = None
+
+class UserPasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+    confirm_password: str
+
+class UserProfileResponse(BaseModel):
+    id: int
+    email: str
+    username: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone: Optional[str] = None
+    bio: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    last_login: Optional[datetime] = None
+    is_active: bool
+    
+    class Config:
+        from_attributes = True
+
 class UserResponse(BaseModel):
     id: int
-    email: EmailStr
+    email: str
+    username: Optional[str] = None
     created_at: datetime
-
+    
     class Config:
         from_attributes = True
