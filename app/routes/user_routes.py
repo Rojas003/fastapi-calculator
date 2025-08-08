@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import UserRegisterRequest, UserLoginRequest, UserResponse, UserProfileUpdate, UserPasswordChange, UserProfileResponse
+from app.schemas.user import UserRegisterRequest, UserLoginRequest, UserResponse, UserProfileUpdate, UserPasswordChange, UserProfileResponse, UserPreferences, UserPreferencesUpdate
 from app.utils.security import get_password_hash, verify_password
 from app.auth.jwt_handler import create_access_token
 from app.auth.dependencies import get_current_user
@@ -102,3 +102,74 @@ def change_password(
     
     logging.info(f"Password changed successfully for user: {current_user.email}")
     return {"message": "Password changed successfully"}
+
+@router.get("/users/preferences", response_model=UserPreferences)
+def get_user_preferences(current_user: User = Depends(get_current_user)):
+    """Get current user's preferences."""
+    logging.info(f"Getting preferences for user: {current_user.email}")
+    
+    return UserPreferences(
+        theme=current_user.theme,
+        language=current_user.language, 
+        timezone=current_user.timezone,
+        notifications_enabled=current_user.notifications_enabled,
+        email_notifications=current_user.email_notifications,
+        calculation_history_limit=current_user.calculation_history_limit,
+        auto_save_calculations=current_user.auto_save_calculations
+    )
+
+@router.put("/users/preferences", response_model=UserPreferences)
+def update_user_preferences(
+    preferences: UserPreferencesUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update user preferences."""
+    logging.info(f"Updating preferences for user: {current_user.email}")
+    
+    # Update only provided fields
+    update_data = preferences.dict(exclude_unset=True)
+    
+    for field, value in update_data.items():
+        if hasattr(current_user, field):
+            setattr(current_user, field, value)
+    
+    current_user.updated_at = func.now()
+    db.commit()
+    db.refresh(current_user)
+    
+    logging.info(f"Preferences updated successfully for user: {current_user.email}")
+    
+    return UserPreferences(
+        theme=current_user.theme,
+        language=current_user.language,
+        timezone=current_user.timezone,
+        notifications_enabled=current_user.notifications_enabled,
+        email_notifications=current_user.email_notifications,
+        calculation_history_limit=current_user.calculation_history_limit,
+        auto_save_calculations=current_user.auto_save_calculations
+    )
+
+@router.post("/users/preferences/reset")
+def reset_user_preferences(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Reset user preferences to defaults."""
+    logging.info(f"Resetting preferences for user: {current_user.email}")
+    
+    # Reset to defaults
+    current_user.theme = "light"
+    current_user.language = "en"
+    current_user.timezone = "UTC"
+    current_user.notifications_enabled = True
+    current_user.email_notifications = True
+    current_user.calculation_history_limit = 100
+    current_user.auto_save_calculations = True
+    current_user.updated_at = func.now()
+    
+    db.commit()
+    db.refresh(current_user)
+    
+    logging.info(f"Preferences reset successfully for user: {current_user.email}")
+    return {"message": "Preferences reset to defaults"}
