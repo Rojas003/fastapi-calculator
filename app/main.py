@@ -11,9 +11,11 @@ from app.database import Base, engine
 from app.routes.user_routes import router as user_router
 from app.routes.calculation import router as calculation_router
 from app.auth.jwt_bearer import JWTBearer
+from app.middleware.activity_middleware import ActivityTrackingMiddleware
 
 app = FastAPI()
 
+app.add_middleware(ActivityTrackingMiddleware)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
