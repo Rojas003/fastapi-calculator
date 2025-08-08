@@ -11,12 +11,21 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=False)
     
-    # NEW PROFILE FIELDS
+    # PROFILE FIELDS (from previous feature)
     username = Column(String, nullable=True)
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
     phone = Column(String, nullable=True)
     bio = Column(String, nullable=True)
+    
+    # NEW: USER PREFERENCES FIELDS 🎨
+    theme = Column(String, default="light")  # "light", "dark", "auto"
+    language = Column(String, default="en")  # "en", "es", "fr"
+    timezone = Column(String, default="UTC")  # User's timezone
+    notifications_enabled = Column(Boolean, default=True)
+    email_notifications = Column(Boolean, default=True)
+    calculation_history_limit = Column(Integer, default=100)  # How many calculations to keep
+    auto_save_calculations = Column(Boolean, default=True)
     
     # METADATA FIELDS
     created_at = Column(DateTime(timezone=True), server_default=func.now())
