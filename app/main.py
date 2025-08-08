@@ -172,3 +172,7 @@ async def profile_page(request: Request):
 @app.get("/preferences", response_class=HTMLResponse)
 async def preferences_page(request: Request):
     return templates.TemplateResponse("preferences.html", {"request": request})
+
+@app.get("/activity", response_class=HTMLResponse)
+async def activity_dashboard(request: Request):
+    return templates.TemplateResponse("activity.html", {"request": request})
