@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+</head>
+<body>
+    <h1>User Profile</h1>
+    
+    <div id="message" style="color: red; min-height: 1em;"></div>
+    
+    <!-- Profile Information Form -->
+    <div class="profile-section">
+        <h2>Profile Information</h2>
+        <form id="profileForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username"><br><br>
+            
+            <label for="first_name">First Name:</label>
+            <input type="text" id="first_name" name="first_name"><br><br>
+            
+            <label for="last_name">Last Name:</label>
+            <input type="text" id="last_name" name="last_name"><br><br>
+            
+            <label for="phone">Phone:</label>
+            <input type="tel" id="phone" name="phone"><br><br>
+            
+            <label for="bio">Bio:</label>
+            <textarea id="bio" name="bio" rows="4" cols="50"></textarea><br><br>
+            
+            <button type="submit">Update Profile</button>
+        </form>
+    </div>
+    
+    <!-- Password Change Form -->
+    <div class="password-section">
+        <h2>Change Password</h2>
+        <form id="passwordForm">
+            <label for="current_password">Current Password:</label>
+            <input type="password" id="current_password" name="current_password" required><br><br>
+            
+            <label for="new_password">New Password:</label>
+            <input type="password" id="new_password" name="new_password" required><br><br>
+            
+            <label for="confirm_password">Confirm New Password:</label>
+            <input type="password" id="confirm_password" name="confirm_password" required><br><br>
+            
+            <button type="submit">Change Password</button>
+        </form>
+    </div>
+    
+    <div class="navigation">
+        <a href="/calculations-page">Back to Calculator</a>
+        <a href="/logout">Logout</a>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const messageEl = document.getElementById('message');
+
+        // Load current profile data
+        async function loadProfile() {
+            try {
+                const response = await fetch('/users/profile', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const profile = await response.json();
+                    document.getElementById('username').value = profile.username || '';
+                    document.getElementById('first_name').value = profile.first_name || '';
+                    document.getElementById('last_name').value = profile.last_name || '';
+                    document.getElementById('phone').value = profile.phone || '';
+                    document.getElementById('bio').value = profile.bio || '';
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+
+        // Update profile
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const profileData = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/users/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(profileData)
+                });
+                
+                if (response.ok) {
+                    messageEl.textContent = 'Profile updated successfully';
+                    messageEl.style.color = 'green';
+                } else {
+                    const error = await response.json();
+                    messageEl.textContent = error.detail || 'Failed to update profile';
+                    messageEl.style.color = 'red';
+                }
+            } catch (error) {
+                messageEl.textContent = 'Error updating profile';
+                messageEl.style.color = 'red';
+            }
+        });
+
+        // Change password
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const passwordData = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/users/change-password', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(passwordData)
+                });
+                
+                if (response.ok) {
+                    messageEl.textContent = 'Password changed successfully';
+                    messageEl.style.color = 'green';
+                    document.getElementById('passwordForm').reset();
+                } else {
+                    const error = await response.json();
+                    messageEl.textContent = error.detail || 'Failed to change password';
+                    messageEl.style.color = 'red';
+                }
+            } catch (error) {
+                messageEl.textContent = 'Error changing password';
+                messageEl.style.color = 'red';
+            }
+        });
+
+        // Load profile on page load
+        loadProfile();
+    </script>
+</body>
+</html>
