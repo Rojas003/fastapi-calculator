@@ -37,7 +37,7 @@ def get_current_user(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        return UserRead(id=user.id, email=user.email)  # ✅ return correct schema
+        return UserRead(id=user.id, email=user.email)  #  return correct schema
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

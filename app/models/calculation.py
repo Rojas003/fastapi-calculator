@@ -12,5 +12,5 @@ class Calculation(Base):
     type = Column(String, nullable=False)
     result = Column(Float, nullable=False)
 
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))  # ✅ safer deletion
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))  #  safer deletion
     user = relationship("User", back_populates="calculations")

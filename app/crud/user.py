@@ -13,7 +13,7 @@ def create_user(db: Session, user: UserCreate) -> User:
     """Create a new user with a hashed password."""
     db_user = User(
         email=user.email,
-        password=get_password_hash(user.password)  # ✅ hash before saving
+        password=get_password_hash(user.password)  #  hash before saving
     )
     db.add(db_user)
     db.commit()
@@ -27,6 +27,6 @@ def get_user_by_email(db: Session, email: str) -> User | None:
 def authenticate_user(db: Session, email: str, password: str) -> User | None:
     """Validate user credentials."""
     user = get_user_by_email(db, email)
-    if user and pwd_context.verify(password, user.password):  # ✅ verify hashed password
+    if user and pwd_context.verify(password, user.password):  #  verify hashed password
         return user
     return None
