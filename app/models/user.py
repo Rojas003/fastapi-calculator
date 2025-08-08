@@ -35,3 +35,4 @@ class User(Base):
     
     # RELATIONSHIPS
     calculations = relationship("Calculation", back_populates="user", cascade="all, delete-orphan")
+    activity_logs = relationship("ActivityLog", back_populates="user", cascade="all, delete-orphan")
