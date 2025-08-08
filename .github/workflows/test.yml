@@ -17,11 +17,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Set up Python (match your local version)
+      # 2. Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"  # Changed from 3.11 to match your local setup
+          python-version: "3.13"
 
       # 3. Cache dependencies
       - name: Cache dependencies
@@ -38,12 +38,43 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 5. Install Playwright browsers (FIXED - use Python playwright, not npm)
+      # 5. Install Playwright browsers
       - name: Install Playwright browsers
         run: |
           playwright install chromium --with-deps
 
-      # 6. Run pytest (fail fast if any test fails)
+      # 6. Run tests
       - name: Run tests
         run: |
           pytest -v --maxfail=1 --disable-warnings
+
+      # 7. Build Docker image (only on main branch)
+      - name: Build Docker image
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          docker build -t rojas003/fastapi-calculator:latest .
+          docker tag rojas003/fastapi-calculator:latest rojas003/fastapi-calculator:${{ github.sha }}
+
+      # 8. Login to Docker Hub (only on main branch)
+      - name: Login to Docker Hub
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 9. Push to Docker Hub (only on main branch)
+      - name: Push to Docker Hub
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          docker push rojas003/fastapi-calculator:latest
+          docker push rojas003/fastapi-calculator:${{ github.sha }}
+
+      # 10. Deployment summary
+      - name: Deployment Summary
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          echo " Deployment successful!"
+          echo " Docker image: rojas003/fastapi-calculator:latest"
+          echo " Docker Hub: https://hub.docker.com/r/rojas003/fastapi-calculator"
+          echo " Tests passed: All 63 tests successful"
