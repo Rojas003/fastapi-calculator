@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Preferences</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .preferences-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .reset-btn {
+            background: #dc3545;
+        }
+        .reset-btn:hover {
+            background: #c82333;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        
+        /* Dark theme styles */
+        body.dark-theme {
+            background-color: #121212;
+            color: #ffffff;
+        }
+        body.dark-theme .preferences-section {
+            background: #1e1e1e;
+            border-color: #333;
+        }
+        body.dark-theme select, 
+        body.dark-theme input {
+            background: #2a2a2a;
+            color: white;
+            border-color: #444;
+        }
+    </style>
+</head>
+<body id="body">
+    <h1>User Preferences</h1>
+    
+    <div id="message" style="min-height: 1em; margin-bottom: 20px;"></div>
+    
+    <form id="preferencesForm">
+        <!-- Appearance Settings -->
+        <div class="preferences-section">
+            <h2>🎨 Appearance</h2>
+            
+            <div class="form-group">
+                <label for="theme">Theme:</label>
+                <select id="theme" name="theme">
+                    <option value="light">☀️ Light</option>
+                    <option value="dark">🌙 Dark</option>
+                    <option value="auto">🔄 Auto (System)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="language">Language:</label>
+                <select id="language" name="language">
+                    <option value="en">🇺🇸 English</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="fr">🇫🇷 Français</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="timezone">Timezone:</label>
+                <select id="timezone" name="timezone">
+                    <option value="UTC">UTC</option>
+                    <option value="America/New_York">Eastern Time</option>
+                    <option value="America/Chicago">Central Time</option>
+                    <option value="America/Denver">Mountain Time</option>
+                    <option value="America/Los_Angeles">Pacific Time</option>
+                    <option value="Europe/London">London</option>
+                    <option value="Europe/Paris">Paris</option>
+                    <option value="Asia/Tokyo">Tokyo</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Notification Settings -->
+        <div class="preferences-section">
+            <h2>🔔 Notifications</h2>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="notifications_enabled" name="notifications_enabled">
+                    Enable in-app notifications
+                </label>
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="email_notifications" name="email_notifications">
+                    Enable email notifications
+                </label>
+            </div>
+        </div>
+        
+        <!-- Calculator Settings -->
+        <div class="preferences-section">
+            <h2>🧮 Calculator Settings</h2>
+            
+            <div class="form-group">
+                <label for="calculation_history_limit">History Limit:</label>
+                <select id="calculation_history_limit" name="calculation_history_limit">
+                    <option value="50">50 calculations</option>
+                    <option value="100">100 calculations</option>
+                    <option value="250">250 calculations</option>
+                    <option value="500">500 calculations</option>
+                    <option value="-1">Unlimited</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="auto_save_calculations" name="auto_save_calculations">
+                    Auto-save calculations
+                </label>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <button type="submit">💾 Save Preferences</button>
+            <button type="button" id="resetBtn" class="reset-btn">🔄 Reset to Defaults</button>
+        </div>
+    </form>
+    
+    <div style="margin-top: 30px;">
+        <a href="/profile">👤 Back to Profile</a> |
+        <a href="/calculations-page">🧮 Calculator</a> |
+        <a href="/logout">🚪 Logout</a>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const messageEl = document.getElementById('message');
+        const bodyEl = document.getElementById('body');
+
+        // Load current preferences
+        async function loadPreferences() {
+            try {
+                const response = await fetch('/users/preferences', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const prefs = await response.json();
+                    
+                    // Populate form
+                    document.getElementById('theme').value = prefs.theme;
+                    document.getElementById('language').value = prefs.language;
+                    document.getElementById('timezone').value = prefs.timezone;
+                    document.getElementById('notifications_enabled').checked = prefs.notifications_enabled;
+                    document.getElementById('email_notifications').checked = prefs.email_notifications;
+                    document.getElementById('calculation_history_limit').value = prefs.calculation_history_limit;
+                    document.getElementById('auto_save_calculations').checked = prefs.auto_save_calculations;
+                    
+                    // Apply theme
+                    applyTheme(prefs.theme);
+                }
+            } catch (error) {
+                console.error('Error loading preferences:', error);
+                showMessage('Error loading preferences', 'error');
+            }
+        }
+
+        // Apply theme
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                bodyEl.classList.add('dark-theme');
+            } else if (theme === 'light') {
+                bodyEl.classList.remove('dark-theme');
+            } else if (theme === 'auto') {
+                // Auto theme based on system preference
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    bodyEl.classList.add('dark-theme');
+                } else {
+                    bodyEl.classList.remove('dark-theme');
+                }
+            }
+        }
+
+        // Show message
+        function showMessage(text, type = 'success') {
+            messageEl.textContent = text;
+            messageEl.className = type;
+            setTimeout(() => {
+                messageEl.textContent = '';
+                messageEl.className = '';
+            }, 3000);
+        }
+
+        // Save preferences
+        document.getElementById('preferencesForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const preferences = {
+                theme: formData.get('theme'),
+                language: formData.get('language'),
+                timezone: formData.get('timezone'),
+                notifications_enabled: formData.has('notifications_enabled'),
+                email_notifications: formData.has('email_notifications'),
+                calculation_history_limit: parseInt(formData.get('calculation_history_limit')),
+                auto_save_calculations: formData.has('auto_save_calculations')
+            };
+            
+            try {
+                const response = await fetch('/users/preferences', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(preferences)
+                });
+                
+                if (response.ok) {
+                    const updatedPrefs = await response.json();
+                    showMessage('Preferences saved successfully!', 'success');
+                    applyTheme(updatedPrefs.theme);
+                } else {
+                    const error = await response.json();
+                    showMessage(error.detail || 'Failed to save preferences', 'error');
+                }
+            } catch (error) {
+                showMessage('Error saving preferences', 'error');
+            }
+        });
+
+        // Reset preferences
+        document.getElementById('resetBtn').addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to reset all preferences to defaults?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/users/preferences/reset', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    showMessage('Preferences reset to defaults!', 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    showMessage('Failed to reset preferences', 'error');
+                }
+            } catch (error) {
+                showMessage('Error resetting preferences', 'error');
+            }
+        });
+
+        // Live theme preview
+        document.getElementById('theme').addEventListener('change', (e) => {
+            applyTheme(e.target.value);
+        });
+
+        // Load preferences on page load
+        loadPreferences();
+    </script>
+</body>
+</html>
